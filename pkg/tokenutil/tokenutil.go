@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 
@@ -34,11 +35,18 @@ func New(cfg *Config) (*TokenManager, error) {
 		return nil, fmt.Errorf("failed to parse PEM block")
 	}
 
-	publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+	// Парсим публичный ключ (PKIX формат)
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse public key: %v", err)
 	}
-	return &TokenManager{publicKey: publicKey}, nil
+
+	// Приводим к типу *rsa.PublicKey
+	rsaPub, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("not an RSA public key")
+	}
+	return &TokenManager{publicKey: rsaPub}, nil
 }
 
 func (tm *TokenManager) ParseAccessToken(tokenString string) (int, error) {
