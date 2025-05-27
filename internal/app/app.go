@@ -9,11 +9,9 @@ import (
 
 	"github.com/VideoHosting-Platform/upload-service/internal/handler"
 	"github.com/VideoHosting-Platform/upload-service/pkg/config"
+	"github.com/VideoHosting-Platform/upload-service/pkg/minio_connection"
 	"github.com/VideoHosting-Platform/upload-service/pkg/server"
 )
-
-// TODO minio client
-// TODO one handler
 
 // TODO event posting
 
@@ -21,7 +19,12 @@ func Run(configPath string) {
 	cfg := config.MustLoad(configPath)
 	fmt.Println(cfg)
 
-	handler := handler.New()
+	mc, err := minio_connection.NewClient(&cfg.Minio)
+	if err != nil {
+		fmt.Println("minio client err") // !change
+	}
+
+	handler := handler.New(mc, cfg.Minio.BucketName)
 	server := server.NewServer(&cfg.HTTP, handler.Init())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)

@@ -3,13 +3,15 @@ package config
 import (
 	"fmt"
 
+	"github.com/VideoHosting-Platform/upload-service/pkg/minio_connection"
 	"github.com/VideoHosting-Platform/upload-service/pkg/server"
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env  string        `yaml:"env"`
-	HTTP server.Config `yaml:"http"`
+	Env   string                  `yaml:"env"`
+	HTTP  server.Config           `yaml:"http"`
+	Minio minio_connection.Config `yaml:"minio"`
 }
 
 func MustLoad(configPath string) *Config {

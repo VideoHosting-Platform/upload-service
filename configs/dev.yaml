@@ -2,3 +2,10 @@ env: dev
 
 http:
   port: 8080
+
+minio:
+  endpoint: localhost:9000
+  bucket_name: videos
+  access_key: BPYUnB5lsb2sR8OKZYcL
+  secret_key: iKScGSBikEX4H4EBfX7PacXTaXfUA7hOmenpVm0S
+  use_secure: false
