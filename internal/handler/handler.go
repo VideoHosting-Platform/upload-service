@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/VideoHosting-Platform/upload-service/pkg/tokenutil"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -16,8 +17,11 @@ import (
 )
 
 type Handler struct {
-	bucket    string
-	mc        *minio.Client
+	tm *tokenutil.TokenManager
+
+	bucket string
+	mc     *minio.Client
+
 	ch        *amqp.Channel
 	queueName string
 	chMutex   sync.Mutex
@@ -29,7 +33,7 @@ type VideoEvent struct {
 	VideoTitle string    `json:"video_title"`
 }
 
-func New(mc *minio.Client, bucketName string, ch *amqp.Channel, qn string) *Handler {
+func New(tm *tokenutil.TokenManager, mc *minio.Client, bucketName string, ch *amqp.Channel, qn string) *Handler {
 	return &Handler{
 		mc:        mc,
 		bucket:    bucketName,
@@ -43,6 +47,7 @@ func (h *Handler) Init() *echo.Echo {
 	router := echo.New()
 
 	router.Use(middleware.CORS())
+	router.Use(h.AuthMiddleware)
 
 	router.GET("/ping", func(c echo.Context) error {
 		return c.JSON(200, struct {
@@ -56,6 +61,10 @@ func (h *Handler) Init() *echo.Echo {
 }
 
 func (h *Handler) uploadVideo(c echo.Context) error {
+
+	// userID := c.Get("userID").(int)
+	// fmt.Println(userID)
+
 	reader, err := c.Request().MultipartReader()
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Not a multipart request")

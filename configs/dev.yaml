@@ -3,6 +3,9 @@ env: dev
 http:
   port: 8080
 
+jwt:
+  public_key: public_key.pem
+
 minio:
   endpoint: localhost:9000
   bucket_name: videos

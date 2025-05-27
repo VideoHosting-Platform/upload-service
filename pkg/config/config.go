@@ -5,11 +5,13 @@ import (
 
 	"github.com/VideoHosting-Platform/upload-service/pkg/minio_connection"
 	"github.com/VideoHosting-Platform/upload-service/pkg/server"
+	"github.com/VideoHosting-Platform/upload-service/pkg/tokenutil"
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
 	Env   string                  `yaml:"env"`
+	JWT   tokenutil.Config        `yaml:"jwt"`
 	HTTP  server.Config           `yaml:"http"`
 	Minio minio_connection.Config `yaml:"minio"`
 }
