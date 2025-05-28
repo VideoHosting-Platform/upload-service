@@ -4,14 +4,16 @@ import (
 	"fmt"
 
 	"github.com/VideoHosting-Platform/upload-service/pkg/minio_connection"
+	"github.com/VideoHosting-Platform/upload-service/pkg/queue"
 	"github.com/VideoHosting-Platform/upload-service/pkg/server"
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env   string                  `yaml:"env"`
-	HTTP  server.Config           `yaml:"http"`
-	Minio minio_connection.Config `yaml:"minio"`
+	Env      string                  `yaml:"env"`
+	HTTP     server.Config           `yaml:"http"`
+	Minio    minio_connection.Config `yaml:"minio"`
+	RabbitMQ queue.Config            `yaml:"rabbitmq"`
 }
 
 func MustLoad(configPath string) *Config {

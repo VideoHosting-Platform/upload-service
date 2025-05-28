@@ -10,21 +10,27 @@ import (
 	"github.com/VideoHosting-Platform/upload-service/internal/handler"
 	"github.com/VideoHosting-Platform/upload-service/pkg/config"
 	"github.com/VideoHosting-Platform/upload-service/pkg/minio_connection"
+	"github.com/VideoHosting-Platform/upload-service/pkg/queue"
 	"github.com/VideoHosting-Platform/upload-service/pkg/server"
 )
 
-// TODO event posting
-
 func Run(configPath string) {
 	cfg := config.MustLoad(configPath)
-	fmt.Println(cfg)
 
 	mc, err := minio_connection.NewClient(&cfg.Minio)
 	if err != nil {
 		fmt.Println("minio client err") // !change
 	}
 
-	handler := handler.New(mc, cfg.Minio.BucketName)
+	q, err := queue.New(&cfg.RabbitMQ)
+	if err != nil {
+
+	}
+
+	handler := handler.New(
+		mc,
+		q,
+	)
 	server := server.NewServer(&cfg.HTTP, handler.Init())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
