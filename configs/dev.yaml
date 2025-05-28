@@ -3,8 +3,12 @@ env: dev
 http:
   port: 8080
 
-jwt:
-  public_key: public_key.pem
+rabbitmq:
+  user: guest
+  password: guest
+  host: localhost
+  port: 5672
+  queue_name: video_processing
 
 minio:
   endpoint: localhost:9000
