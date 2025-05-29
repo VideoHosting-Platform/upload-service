@@ -10,12 +10,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func (h *Handler) uploadVideo(c echo.Context) error {
 
+	// metrics
+	uploadRequests.Inc()
+	timer := prometheus.NewTimer(uploadDuration) // Замер времени
+	defer timer.ObserveDuration()
+
 	reader, err := c.Request().MultipartReader()
 	if err != nil {
+		uploadFailedTotal.WithLabelValues(reasonInvalidFormat).Inc()
 		return c.String(http.StatusBadRequest, "Not a multipart request")
 	}
 
@@ -31,30 +38,40 @@ func (h *Handler) uploadVideo(c echo.Context) error {
 		if err == io.EOF {
 			break
 		}
-		if part.FormName() == "title" {
+		defer part.Close()
+
+		switch part.FormName() {
+		case "title":
 			buf := new(bytes.Buffer)
 			_, err := io.Copy(buf, part)
 			if err != nil {
+				uploadFailedTotal.WithLabelValues(reasonReadTitleError).Inc()
 				return c.String(http.StatusInternalServerError, "read title error")
 			}
 			title = buf.String()
-		} else if part.FormName() == "video" {
+		case "video":
 			io.Copy(pw, part)
+		default:
+			uploadFailedTotal.WithLabelValues(reasonInvalidFormat).Inc()
+			return c.String(http.StatusBadRequest, "not a valid form title")
 		}
 	}
 	pw.Close()
 
 	if err := <-done; err != nil {
 		fmt.Println(err.Error())
+		uploadFailedTotal.WithLabelValues(reasonMinioError).Inc()
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("error while uploading to s3 - %s", err.Error()))
 	}
 
 	err = h.publishEvent(c.Request().Context(), videoID, 1, title) // ! change user id
 
 	if err != nil {
+		uploadFailedTotal.WithLabelValues(reasonPublishEventError).Inc()
 		c.String(http.StatusInternalServerError, "Can not upload video for processing")
 	}
 
+	uploadSuccessTotal.Inc()
 	return c.String(http.StatusOK, "File uploaded to MinIO!")
 }
 
