@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: upload-service-monitor
+  namespace: monitoring  # Где развернут ServiceMonitor
+spec:
+  selector:
+    matchLabels:
+      app: upload-service  # Ищет Service с этими labels
+  namespaceSelector:
+    matchNames:
+    - default  # Искать во всех namespace (или указать конкретные)
+  endpoints:
+  - port: monitor
+    path: /metrics  # Путь к метрикам
+    interval: 30s  # Частота сбора
+    scheme: http   # Протокол (http/https)
+    honorLabels: true  # Не перезаписывать labels метрик

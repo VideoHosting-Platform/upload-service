@@ -5,7 +5,7 @@ metadata:
   labels:
     app: upload-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: upload-service
@@ -16,6 +16,14 @@ spec:
     spec:
       containers:
         - name: backend
-          image: # ! change
+          image: danilukumnik/upload-service:latest
+          volumeMounts:
+          - name: configs
+            mountPath: /app/configs/prod.yaml
+            subPath: prod.yaml
           ports:
           - containerPort: 8080
+      volumes:
+      - name: configs
+        configMap:
+          name: upload-service-cm

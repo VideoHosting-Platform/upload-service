@@ -16,6 +16,6 @@ FROM alpine:latest
 WORKDIR /
 
 COPY --from=build /app/main /app/main
-COPY --from=build /app/configs /app/configs
+COPY --from=build /app/configs/prod.yaml /app/configs/prod.yaml
 
-ENTRYPOINT ["/app/main"]
+ENTRYPOINT ["/app/main", "--config=/app/configs/prod.yaml"]
