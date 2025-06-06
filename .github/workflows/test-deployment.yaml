@@ -14,28 +14,16 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
-    - name: Install yc CLI
-      run: |
-        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -i /usr/local -n
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Configure yc CLI
-      run: |
-        echo "${{ secrets.YC_SERVICE_ACCOUNT_KEY }}" > key.json
-        yc config set service-account-key key.json
-        yc config set folder-id $FOLDER_ID
+    - name: Setup YC CLI and kubectl
+      uses: andreyvlassenko/setup-yc-k8s@v1
+      with:
+        yc-sa-json-key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+        folder-id: ${{ env.FOLDER_ID }}
+        cluster-id: ${{ env.CLUSTER_ID }}
 
-    - name: Setup kubectl
+    - name: Deploy test application
       run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
-
-    - name: Get kubeconfig and deploy
-      run: |
-        yc managed-kubernetes cluster get-credentials $CLUSTER_ID --external
-
         # Применяем тестовый манифест
         kubectl apply -f - <<EOF
         apiVersion: apps/v1
@@ -43,7 +31,7 @@ jobs:
         metadata:
           name: nginx-test-deployment
         spec:
-          replicas: 1
+          replicas: 2
           selector:
             matchLabels:
               app: nginx-test
@@ -54,9 +42,23 @@ jobs:
             spec:
               containers:
               - name: nginx
-                image: nginx:latest
+                image: nginx:1.25
                 ports:
                 - containerPort: 80
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: nginx-test-service
+        spec:
+          type: ClusterIP
+          selector:
+            app: nginx-test
+          ports:
+            - port: 80
+              targetPort: 80
         EOF
-        
-        kubectl get pods
+
+        # Проверяем состояние деплоя
+        kubectl get pods -w
+        kubectl get svc

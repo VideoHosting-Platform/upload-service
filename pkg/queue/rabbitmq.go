@@ -38,7 +38,7 @@ func New(cfg *Config) (*Queue, error) {
 
 	q, err := ch.QueueDeclare(
 		cfg.QueueName, // name
-		true,          // durable
+		false,         // durable
 		false,         // delete when unused
 		false,         // exclusive
 		false,         // no-wait

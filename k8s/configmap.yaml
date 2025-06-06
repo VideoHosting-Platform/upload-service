@@ -10,8 +10,8 @@ data:
       port: 8080
 
     rabbitmq:
-      user: default_user_HpNYU-GmWkBGJhSeVm1
-      password: JOqi5yJccJXLDeS4XtsPo6tfrAPmOU9u
+      user: default_user__fGt3zI-RfZYqeCZKbO
+      password: FmMb1h9aRdo8BLhrqt2sAeGgQ8Lt7Ws7
       host: rabbitmq.rabbitmq-system.svc.cluster.local
       port: 5672
       queue_name: video_processing
