@@ -15,67 +15,49 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Официальный Action для настройки YC CLI
-    - name: Configure Yandex Cloud CLI
-      uses: yc-actions/configure-yc-cli@v1
-      with:
-        sa-json-credentials: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
-        folder-id: ${{ env.FOLDER_ID }}
-
-    # Официальный Action для получения kubeconfig
-    - name: Get Kubernetes Credentials
-      uses: yc-actions/get-k8s-credentials@v1
-      with:
-        cluster-id: ${{ env.CLUSTER_ID }}
-        external: true  # Для доступа извне Y.Cloud
-
-    # Установка kubectl от Microsoft (официальный)
-    - name: Setup kubectl
-      uses: azure/setup-kubectl@v3
-
-    # Пример деплоя тестового приложения
-    - name: Deploy Application
+    - name: Install yc CLI
       run: |
-        # Проверяем подключение
-        kubectl cluster-info
+        # Устанавливаем в домашнюю директорию
+        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+        echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+
+    - name: Configure yc CLI
+      run: |
+        echo "${{ secrets.YC_SERVICE_ACCOUNT_KEY }}" > key.json
+        yc config set service-account-key key.json
+        yc config set folder-id $FOLDER_ID
+
+    - name: Setup kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Get kubeconfig and deploy
+      run: |
+        yc managed-kubernetes cluster get-credentials $CLUSTER_ID --external
         
-        # Применяем манифест (можно заменить на ваши файлы)
+        # Применяем тестовый манифест
         kubectl apply -f - <<EOF
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: nginx-deployment
-          labels:
-            app: nginx
+          name: nginx-test-deployment
         spec:
-          replicas: 2
+          replicas: 1
           selector:
             matchLabels:
-              app: nginx
+              app: nginx-test
           template:
             metadata:
               labels:
-                app: nginx
+                app: nginx-test
             spec:
               containers:
               - name: nginx
-                image: nginx:1.25
+                image: nginx:latest
                 ports:
                 - containerPort: 80
-        ---
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: nginx-service
-        spec:
-          type: ClusterIP
-          selector:
-            app: nginx
-          ports:
-            - port: 80
-              targetPort: 80
         EOF
-
-        # Проверяем результат
-        kubectl get pods -w
-        kubectl get svc
+        
+        kubectl get pods
