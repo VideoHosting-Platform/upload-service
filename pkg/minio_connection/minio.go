@@ -12,7 +12,7 @@ import (
 type Config struct {
 	Endpoint   string `env:"MINIO_ENDPOINT"`
 	BucketName string `env:"MINIO_BUCKET_NAME"`
-	AccessKey  string `env:"MINIO_ACESS_KEY"`
+	AccessKey  string `env:"MINIO_ACCESS_KEY"`
 	SecretKey  string `env:"MINIO_SECRET_KEY"`
 	UseSSL     bool   `env:"MINIO_USE_SSL" env-default:"false"`
 }
