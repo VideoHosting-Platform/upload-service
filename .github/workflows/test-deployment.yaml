@@ -1,0 +1,62 @@
+name: Deploy to Yandex Cloud Kubernetes
+
+on:
+  push:
+    branches: [ dev ]
+
+env:
+  FOLDER_ID: b1gq90lppq2qo7ofbuhb
+  CLUSTER_ID: mk8s-cluster
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Install yc CLI
+      run: |
+        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -i /usr/local -n
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Configure yc CLI
+      run: |
+        echo "${{ secrets.YC_SERVICE_ACCOUNT_KEY }}" > key.json
+        yc config set service-account-key key.json
+        yc config set folder-id $FOLDER_ID
+
+    - name: Setup kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Get kubeconfig and deploy
+      run: |
+        yc managed-kubernetes cluster get-credentials $CLUSTER_ID --external
+
+        # Применяем тестовый манифест
+        kubectl apply -f - <<EOF
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: nginx-test-deployment
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: nginx-test
+          template:
+            metadata:
+              labels:
+                app: nginx-test
+            spec:
+              containers:
+              - name: nginx
+                image: nginx:latest
+                ports:
+                - containerPort: 80
+        EOF
+        
+        kubectl get pods
