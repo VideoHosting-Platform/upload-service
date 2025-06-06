@@ -75,5 +75,7 @@ jobs:
 
           kubectl create secret generic upload-service-secret --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/deploy.yaml
-          kubectl rollout restart -f k8s/deploy.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/service_monitor.yaml
+          kubectl rollout restart -f k8s/deployment.yaml
