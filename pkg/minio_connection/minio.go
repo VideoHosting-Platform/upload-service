@@ -2,6 +2,7 @@ package minio_connection
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/minio/minio-go/v7"
@@ -9,11 +10,11 @@ import (
 )
 
 type Config struct {
-	Endpoint   string `yaml:"endpoint"`
-	BucketName string `yaml:"bucket_name"`
-	AccessKey  string `yaml:"access_key"`
-	SecretKey  string `yaml:"secret_key"`
-	UseSSL     bool   `yaml:"use_ssl"`
+	Endpoint   string `env:"MINIO_ENDPOINT"`
+	BucketName string `env:"MINIO_BUCKET_NAME"`
+	AccessKey  string `env:"MINIO_ACESS_KEY"`
+	SecretKey  string `env:"MINIO_SECRET_KEY"`
+	UseSSL     bool   `env:"MINIO_USE_SSL" env-default:"false"`
 }
 
 type MinioClient struct {
@@ -27,6 +28,13 @@ func NewClient(cfg *Config) (*MinioClient, error) {
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
 		Secure: cfg.UseSSL,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("connect to MinIO error : %w", err)
+	}
+	_, err = mc.ListBuckets(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("connect to MinIO error : %w", err)
+	}
 	return &MinioClient{mc: mc, bucketName: cfg.BucketName}, err
 }
 

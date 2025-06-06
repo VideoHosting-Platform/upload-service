@@ -2,68 +2,78 @@ name: Deploy to Yandex Cloud Kubernetes
 
 on:
   push:
-    branches: [ dev ]
-
-env:
-  FOLDER_ID: b1gq90lppq2qo7ofbuhb
-  CLUSTER_ID: mk8s-cluster
+    branches: [main, dev]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment: prod
+    env:
+      REGISTRY: docker.io
+      IMAGE_NAME: danilukumnik/upload-service
+      FOLDER_ID: b1gq90lppq2qo7ofbuhb
+      CLUSTER_ID: mk8s-cluster
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # Шаг 1: Получение кода
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install yc CLI
-      run: |
-        # Устанавливаем в домашнюю директорию
-        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
-        echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+      # Шаг 2: Настройка Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Configure yc CLI
-      run: |
-        echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > key.json
-        if ! jq empty key.json >/dev/null 2>&1; then
-          echo "ERROR: Invalid JSON in service account key (details hidden for security)"
-          exit 1
-        else
-          echo "Service account key JSON is valid (content not displayed)"
-        fi
-        yc config set service-account-key key.json
-        yc config set folder-id $FOLDER_ID
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Setup kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-    - name: Get kubeconfig and deploy
-      run: |
-        yc managed-kubernetes cluster get-credentials $CLUSTER_ID --external
-        
-        # Применяем тестовый манифест
-        kubectl apply -f - <<EOF
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: nginx-test-deployment
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              app: nginx-test
-          template:
-            metadata:
-              labels:
-                app: nginx-test
-            spec:
-              containers:
-              - name: nginx
-                image: nginx:latest
-                ports:
-                - containerPort: 80
-        EOF
-        
-        kubectl get pods
+      - name: Install yc CLI
+        run: |
+          # Устанавливаем в домашнюю директорию
+          curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+          echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+
+      - name: Configure yc CLI
+        run: |
+          echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > key.json
+          if ! jq empty key.json >/dev/null 2>&1; then
+            echo "ERROR: Invalid JSON in service account key (details hidden for security)"
+            exit 1
+          else
+            echo "Service account key JSON is valid (content not displayed)"
+          fi
+          yc config set service-account-key key.json
+          yc config set folder-id $FOLDER_ID
+
+      - name: Setup kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Deploy to Kubernetes
+        run: |
+          yc managed-kubernetes cluster get-credentials $CLUSTER_ID --external
+
+          echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
+          echo 'RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}' >> .env
+          echo 'MINIO_ACCESS_KEY=minioadmin' >> .env
+          echo 'MINIO_SECRET_KEY=minioadmin' >> .env
+
+
+          kubectl create secret generic upload-service-secret --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/deploy.yaml
+          kubectl rollout restart -f k8s/deploy.yaml

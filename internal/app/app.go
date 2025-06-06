@@ -14,13 +14,13 @@ import (
 	"github.com/VideoHosting-Platform/upload-service/pkg/server"
 )
 
-func Run(configPath string) {
+func Run() {
 
-	cfg := config.MustLoad(configPath)
+	cfg := config.MustLoad()
 
 	logger.Init(cfg.Env)
 	log := logger.WithSource("app")
-	log.Debug("configuration loaded", "path", configPath)
+	log.Debug("configuration loaded", "cfg", cfg)
 
 	mc, err := minio_connection.NewClient(&cfg.Minio)
 	if err != nil {

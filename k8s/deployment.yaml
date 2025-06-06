@@ -17,13 +17,10 @@ spec:
       containers:
         - name: backend
           image: danilukumnik/upload-service:latest
-          volumeMounts:
-          - name: configs
-            mountPath: /app/configs/prod.yaml
-            subPath: prod.yaml
+          envFrom:
+          - configMapRef:
+              name: upload-service-cm
+          - secretRef:
+              name: upload-service-secret
           ports:
           - containerPort: 8080
-      volumes:
-      - name: configs
-        configMap:
-          name: upload-service-cm
