@@ -15,30 +15,47 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup YC CLI and kubectl
-      uses: andreyvlassenko/setup-yc-k8s@v1
+    # Официальный Action для настройки YC CLI
+    - name: Configure Yandex Cloud CLI
+      uses: yc-actions/configure-yc-cli@v1
       with:
-        yc-sa-json-key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+        sa-json-credentials: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
         folder-id: ${{ env.FOLDER_ID }}
-        cluster-id: ${{ env.CLUSTER_ID }}
 
-    - name: Deploy test application
+    # Официальный Action для получения kubeconfig
+    - name: Get Kubernetes Credentials
+      uses: yc-actions/get-k8s-credentials@v1
+      with:
+        cluster-id: ${{ env.CLUSTER_ID }}
+        external: true  # Для доступа извне Y.Cloud
+
+    # Установка kubectl от Microsoft (официальный)
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+
+    # Пример деплоя тестового приложения
+    - name: Deploy Application
       run: |
-        # Применяем тестовый манифест
+        # Проверяем подключение
+        kubectl cluster-info
+        
+        # Применяем манифест (можно заменить на ваши файлы)
         kubectl apply -f - <<EOF
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: nginx-test-deployment
+          name: nginx-deployment
+          labels:
+            app: nginx
         spec:
           replicas: 2
           selector:
             matchLabels:
-              app: nginx-test
+              app: nginx
           template:
             metadata:
               labels:
-                app: nginx-test
+                app: nginx
             spec:
               containers:
               - name: nginx
@@ -49,16 +66,16 @@ jobs:
         apiVersion: v1
         kind: Service
         metadata:
-          name: nginx-test-service
+          name: nginx-service
         spec:
           type: ClusterIP
           selector:
-            app: nginx-test
+            app: nginx
           ports:
             - port: 80
               targetPort: 80
         EOF
 
-        # Проверяем состояние деплоя
+        # Проверяем результат
         kubectl get pods -w
         kubectl get svc
