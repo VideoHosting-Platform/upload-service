@@ -16,9 +16,9 @@ jobs:
           image_name: upload-service
           folder_id: b1gq90lppq2qo7ofbuhb
           cluster_id: mk8s-cluster
-          dockerhub_username: {{ secrets.DOCKERHUB_LOGIN }}
-          dockerhub_token: {{ secrets.DOCKERHUB_TOKEN }}
-          yc_service_account_key: {{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+          dockerhub_username: ${{ secrets.DOCKERHUB_LOGIN }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
       - name: Deploy
         run: |
           echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
