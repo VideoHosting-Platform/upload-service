@@ -12,10 +12,11 @@ jobs:
       - name: Set up project
         uses: VideoHosting-Platform/actions/.github/actions/setup-and-deploy@main
         with:
-          registry: docker.io
-          image_name: upload-service
-          folder_id: b1gq90lppq2qo7ofbuhb
-          cluster_id: mk8s-cluster
+          registry: 'docker.io'
+          image_name: 'upload-service'
+          folder_id: 'b1gq90lppq2qo7ofbuhb'
+          cluster_id: 'mk8s-cluster'
+        secrets:
           dockerhub_username: ${{ secrets.DOCKERHUB_LOGIN }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
