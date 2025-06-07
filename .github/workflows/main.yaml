@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up project
         uses: VideoHosting-Platform/actions/.github/actions/setup-and-deploy@main
         with:
@@ -16,11 +19,10 @@ jobs:
           image_name: 'upload-service'
           folder_id: 'b1gq90lppq2qo7ofbuhb'
           cluster_id: 'mk8s-cluster'
-        secrets:
           dockerhub_username: ${{ secrets.DOCKERHUB_LOGIN }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
-          
+
       - name: Deploy
         run: |
           echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
@@ -34,4 +36,3 @@ jobs:
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/service_monitor.yaml
           kubectl rollout restart -f k8s/deployment.yaml
-      
