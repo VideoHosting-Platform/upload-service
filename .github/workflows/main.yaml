@@ -20,6 +20,7 @@ jobs:
           dockerhub_username: ${{ secrets.DOCKERHUB_LOGIN }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+          
       - name: Deploy
         run: |
           echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
