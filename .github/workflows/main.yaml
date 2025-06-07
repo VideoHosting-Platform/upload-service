@@ -10,7 +10,7 @@ jobs:
     environment: prod
     steps:
       - name: Set up project
-        uses: VideoHosting-Platform/actions@main/.github/actions/setup-and-deploy/action.yaml
+        uses: VideoHosting-Platform/actions/.github/actions/setup-and-deploy@main
         with:
           registry: docker.io
           image_name: upload-service
