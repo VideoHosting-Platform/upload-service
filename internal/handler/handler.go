@@ -2,9 +2,13 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"io"
+	"log"
+	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -21,8 +25,7 @@ type EventPublisher interface {
 
 type Handler struct {
 	mc MinioClient
-
-	q EventPublisher
+	q  EventPublisher
 }
 
 type VideoEvent struct {
@@ -43,6 +46,16 @@ func (h *Handler) Init() *echo.Echo {
 	router := echo.New()
 
 	router.Use(middleware.CORS())
+	router.Use(echoprometheus.NewMiddleware("upload_service"))
+
+	go func() {
+		metrics := echo.New()
+		metrics.HideBanner = true
+		metrics.GET("/metrics", echoprometheus.NewHandler())
+		if err := metrics.Start(":8081"); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
 
 	router.GET("/ping", func(c echo.Context) error {
 		return c.JSON(200, struct {

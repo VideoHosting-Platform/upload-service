@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	User      string `yaml:"user"`
-	Password  string `yaml:"password"`
-	Host      string `yaml:"host"`
-	Port      string `yaml:"port"`
-	QueueName string `yaml:"queue_name"`
+	User      string `env:"RABBITMQ_USER"`
+	Password  string `env:"RABBITMQ_PASSWORD"`
+	Host      string `env:"RABBITMQ_HOST"`
+	Port      string `env:"RABBITMQ_PORT" env-default:"5672"`
+	QueueName string `env:"RABBITMQ_QUEUE_NAME"`
 }
 
 type Queue struct {
@@ -38,7 +38,7 @@ func New(cfg *Config) (*Queue, error) {
 
 	q, err := ch.QueueDeclare(
 		cfg.QueueName, // name
-		true,          // durable
+		false,         // durable
 		false,         // delete when unused
 		false,         // exclusive
 		false,         // no-wait

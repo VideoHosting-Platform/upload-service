@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/VideoHosting-Platform/upload-service/pkg/minio_connection"
 	"github.com/VideoHosting-Platform/upload-service/pkg/queue"
@@ -10,20 +11,31 @@ import (
 )
 
 type Config struct {
-	Env      string                  `yaml:"env"`
-	HTTP     server.Config           `yaml:"http"`
-	Minio    minio_connection.Config `yaml:"minio"`
-	RabbitMQ queue.Config            `yaml:"rabbitmq"`
+	Env      string `env:"APP_ENV" env-default:"dev"`
+	HTTP     server.Config
+	Minio    minio_connection.Config
+	RabbitMQ queue.Config
 }
 
-func MustLoad(configPath string) *Config {
+func MustLoad() *Config {
 
 	var cfg Config
-	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		panic(fmt.Sprintf("error occured while reading config: %s", err.Error()))
-	}
-	if cfg.Env != "dev" && cfg.Env != "test" && cfg.Env != "prod" {
-		panic("error occured while reading config - not valid env value")
+
+	envFile := ".env"
+
+	// Проверяем наличие .env файла
+	if _, err := os.Stat(envFile); err == nil {
+		// Если файл есть, загружаем из него (переменные окружения перезапишут значения из файла)
+		err = cleanenv.ReadConfig(envFile, &cfg)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to read config from .env: %v", err))
+		}
+	} else {
+		// Если файла нет, загружаем только из переменных окружения
+		err = cleanenv.ReadEnv(&cfg)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to read config from env vars: %v", err))
+		}
 	}
 	return &cfg
 }
