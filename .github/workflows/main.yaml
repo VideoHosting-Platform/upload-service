@@ -1,0 +1,35 @@
+name: Deploy to Yandex Cloud Kubernetes
+
+on:
+  push:
+    branches: [main, dev]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Set up project
+        uses: VideoHosting-Platform/actions/tree/main/.github/actions/setup-and-deploy@v1
+        with:
+          registry: docker.io
+          image_name: upload-service
+          folder_id: b1gq90lppq2qo7ofbuhb
+          cluster_id: mk8s-cluster
+          dockerhub_username: '{{ secrets.DOCKERHUB_LOGIN }}'
+          dockerhub_token: '{{ secrets.DOCKERHUB_TOKEN }}'
+          yc_service_account_key: '{{ secrets.YC_SERVICE_ACCOUNT_KEY }}'
+      - name: Deploy
+        run: |
+          echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
+          echo 'RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}' >> .env
+          echo 'MINIO_ACCESS_KEY=minioadmin' >> .env
+          echo 'MINIO_SECRET_KEY=minioadmin' >> .env
+          
+          kubectl create secret generic upload-service-secret --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/service_monitor.yaml
+          kubectl rollout restart -f k8s/deployment.yaml
+      
