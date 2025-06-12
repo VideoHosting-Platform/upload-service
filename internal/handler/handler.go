@@ -2,10 +2,7 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"io"
-	"log"
-	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo-contrib/echoprometheus"
@@ -48,14 +45,7 @@ func (h *Handler) Init() *echo.Echo {
 	router.Use(middleware.CORS())
 	router.Use(echoprometheus.NewMiddleware("upload_service"))
 
-	go func() {
-		metrics := echo.New()
-		metrics.HideBanner = true
-		metrics.GET("/metrics", echoprometheus.NewHandler())
-		if err := metrics.Start(":8081"); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal(err)
-		}
-	}()
+	router.GET("/metrics", echoprometheus.NewHandler())
 
 	router.GET("/ping", func(c echo.Context) error {
 		return c.JSON(200, struct {

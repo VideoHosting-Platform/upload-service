@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name}}-upload-service
+  labels:
+    app: upload-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name}}-us
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name}}-us
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          envFrom:
+          - configMapRef:
+              name: {{ .Release.Name}}-cm
+          - secretRef:
+              name: {{ .Release.Name}}-secret
+          ports:
+          - containerPort: {{ .Values.httpPort }}

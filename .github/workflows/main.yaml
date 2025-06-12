@@ -25,14 +25,7 @@ jobs:
 
       - name: Deploy
         run: |
-          echo 'RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}' >> .env
-          echo 'RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}' >> .env
-          echo 'MINIO_ACCESS_KEY=minioadmin' >> .env
-          echo 'MINIO_SECRET_KEY=minioadmin' >> .env
-          
-          kubectl create secret generic upload-service-secret --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/service_monitor.yaml
-          kubectl rollout restart -f k8s/deployment.yaml
+
+          helm update --install video-hosting \
+            oci://ghcr.io/redblood-pixel/charts/video-hosting-stack \
+            --set 'upload-service.image.tag=${{ github.sha }}'

@@ -36,21 +36,10 @@ func New(cfg *Config) (*Queue, error) {
 		return nil, err
 	}
 
-	q, err := ch.QueueDeclare(
-		cfg.QueueName, // name
-		false,         // durable
-		false,         // delete when unused
-		false,         // exclusive
-		false,         // no-wait
-		nil,           // arguments
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &Queue{
 		conn:      conn,
 		ch:        ch,
-		queueName: q.Name,
+		queueName: cfg.QueueName,
 	}, nil
 }
 
