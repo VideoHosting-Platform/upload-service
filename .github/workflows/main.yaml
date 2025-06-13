@@ -22,9 +22,15 @@ jobs:
           dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           yc_service_account_key: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+      - name: Login to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GHUB_TOKEN }}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
 
       - name: Deploy
         run: |
+          kubectl get pods
           helm upgrade video-hosting \
             oci://ghcr.io/redblood-pixel/charts/video-hosting-stack \
             --reuse-values \
