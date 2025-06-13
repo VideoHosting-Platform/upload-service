@@ -25,7 +25,11 @@ jobs:
 
       - name: Deploy
         run: |
-
+          TOKEN=$(kubectl create token video-hosting-secrets-view)
+          
           helm upgrade --install video-hosting \
             oci://ghcr.io/redblood-pixel/charts/video-hosting-stack \
-            --set 'upload-service.image.tag=${{ github.sha }}'
+            --reuse-values \
+            --set 'upload-service.image.tag=${{ github.sha }}' \
+            --kube-token $TOKEN
+
