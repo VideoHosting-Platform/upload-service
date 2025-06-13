@@ -10,7 +10,7 @@ type Server struct {
 }
 
 type Config struct {
-	Port string `yaml:"port"`
+	Port string `env:"HTTP_PORT" env-default:"8080"`
 }
 
 func NewServer(cfg *Config, handler http.Handler) *Server {

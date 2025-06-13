@@ -1,0 +1,23 @@
+replicaCount: 1
+
+appEnv: dev
+httpPort: 8080
+
+minio:
+  endpoint: video-hosting-minio:9000
+  bucket: videos
+  accessKey: minioadmin
+  secretKey: minioadmin
+
+rabbitmq:
+  host: video-hosting-rabbitmq
+  port: 5672
+  queueName: video_processing
+  user: user
+  password: password
+
+
+image:
+  repository: danilukumnik/upload-service
+  pullPolicy: IfNotPresent
+  tag: "0.1.0"

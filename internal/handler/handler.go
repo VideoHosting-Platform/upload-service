@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -21,8 +22,7 @@ type EventPublisher interface {
 
 type Handler struct {
 	mc MinioClient
-
-	q EventPublisher
+	q  EventPublisher
 }
 
 type VideoEvent struct {
@@ -43,6 +43,9 @@ func (h *Handler) Init() *echo.Echo {
 	router := echo.New()
 
 	router.Use(middleware.CORS())
+	router.Use(echoprometheus.NewMiddleware("upload_service"))
+
+	router.GET("/metrics", echoprometheus.NewHandler())
 
 	router.GET("/ping", func(c echo.Context) error {
 		return c.JSON(200, struct {

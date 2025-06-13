@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name}}-upload-service
+  labels:
+    app: {{ .Release.Name}}-us
+spec:
+  type: ClusterIP 
+  selector:
+    app: {{ .Release.Name}}-us
+  ports:
+  - name: web
+    port: {{ .Values.httpPort }}
+    targetPort: {{ .Values.httpPort }}
