@@ -26,7 +26,9 @@ jobs:
 
       - name: Deploy
         run: |
-
-          helm upgrade --install video-hosting \
+          kubectl get pods
+          helm upgrade video-hosting \
             oci://ghcr.io/redblood-pixel/charts/video-hosting-stack \
+            --reuse-values \
             --set 'upload-service.image.tag=${{ github.sha }}'
+
